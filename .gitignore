@@ -1,0 +1,4 @@
+build
+src_pure
+cmake-build-release
+.idea
