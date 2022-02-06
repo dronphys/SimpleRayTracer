@@ -248,7 +248,7 @@ int main()
     ImGui_ImplOpenGL3_Init(glsl_version);
 
 
-    // check for linking errors and validate program as per normal here
+
 
     // drawing loop
     const double limitFPS = 1.0 / 60.0;
@@ -566,8 +566,7 @@ int main()
 
         if (glfwGetTime() - timer > 1.0) {
             timer++;
-            std:: cout << "vSpheres size: " <<
-            vSpheres.size() << std::endl;
+
             std::cout << "FPS: " << frames << std::endl;
             frames = 0;
 
