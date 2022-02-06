@@ -384,7 +384,7 @@ int main()
                 camera_moved = true;
             }
 
-            if (ImGui::SliderFloat("Slider Z", zPos,-5.0f,5.0f))
+            if (ImGui::SliderFloat("Slider Z", zPos,-10.0f,10.0f))
             {
                 camera_moved = true;
             }

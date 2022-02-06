@@ -420,7 +420,7 @@ vec3 calculate_color(in Ray r)
         else 
         {
             float t = 0.5 * (r.direction.y + 1.0);
-            vec3 sky_color =(1.0 - t) * vec3(1.0) + t * vec3(0.5, 0.7, 1.0);
+            vec3 sky_color =vec3(0.2);//(1.0 - t) * vec3(1.0) + t * vec3(0.5, 0.7, 1.0);
             color *= sky_color *0.9;
             break;
         }
