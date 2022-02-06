@@ -25,30 +25,8 @@ struct CamInfo{
 void UpdateCamera(GLFWwindow* window,CamInfo& cam, bool& camera_moved){
     float tmp_x;
     float tmp_z;
-    float dAlpha = -2.0*PI/180.0;
     float dMove  = 0.1;
-//    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_D)) {
-//        camera_moved = true;
-//        tmp_x = cam.directionView[0];
-//        tmp_z = cam.directionView[2];
-//        cam.directionView[0] = tmp_x*cos(dAlpha) + tmp_z* sin(dAlpha) ;
-//        cam.directionView[2] = -tmp_x*sin(dAlpha) + tmp_z * cos(dAlpha) ;
-//        tmp_x = cam.rightPerp[0];
-//        tmp_z = cam.rightPerp[2];
-//        cam.rightPerp[0] = tmp_x*cos(dAlpha) + tmp_z* sin(dAlpha) ;
-//        cam.rightPerp[2] = -tmp_x*sin(dAlpha) + tmp_z * cos(dAlpha) ;
-//    }
-//    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_A)) {
-//        camera_moved = true;
-//        tmp_x = cam.directionView[0];
-//        tmp_z = cam.directionView[2];
-//        cam.directionView[0] = tmp_x*cos(dAlpha) - tmp_z* sin(dAlpha) ;
-//        cam.directionView[2] = tmp_x*sin(dAlpha) + tmp_z * cos(dAlpha) ;
-//        tmp_x = cam.rightPerp[0];
-//        tmp_z = cam.rightPerp[2];
-//        cam.rightPerp[0] = tmp_x*cos(dAlpha) - tmp_z* sin(dAlpha) ;
-//        cam.rightPerp[2] = tmp_x*sin(dAlpha) + tmp_z * cos(dAlpha) ;
-//    }
+
     if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_W)) {
         camera_moved = true;
         cam.cameraPosition[0] += dMove*cam.directionView[0];
@@ -71,7 +49,7 @@ void UpdateCamera(GLFWwindow* window,CamInfo& cam, bool& camera_moved){
         cam.cameraPosition[2] += -cam.rightPerp[2]*dMove;
     }
 
-    if (is_LKM_pressed){
+    if (is_LKM_pressed && !ImGui::GetIO().WantCaptureMouse){
         if (mouseMoved){
         double angle_change = (xPos - last_xPos)*0.016;
         camera_moved = true;

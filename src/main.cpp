@@ -44,23 +44,33 @@ struct Sphere
 
 };
 
+enum  MaterialType {
+    LAMBERT = 0,
+    METAL = 1,
+    GLASS = 2,
+    LIGHT = 3
+};
 
 
 int main()
 {
-    Sphere s0;
-    s0.center_pos[0] = -0.51;
-    s0.center_pos[1] = 0.5;
-    s0.center_pos[2] = -10.0;
-    s0.R = 0.5;
-    s0.material_id = 0;
     // floor
+    Sphere s0;
+    s0.center_pos[0] = 0.0;
+    s0.center_pos[1] = -1000.5;
+    s0.center_pos[2] = -1.0;
+    s0.R = 1000;
+    s0.material_id = 0;
+
+
     Sphere s1;
-    s1.center_pos[0] = 0.0;
-    s1.center_pos[1] = -1000.5;
-    s1.center_pos[2] = -1.0;
-    s1.R = 1000;
+    s1.center_pos[0] = -0.51;
+    s1.center_pos[1] = 0.5;
+    s1.center_pos[2] = -10.0;
+    s1.R = 0.5;
     s1.material_id = 1;
+
+
 
     Sphere s2;
     s2.center_pos[0] = -0.51;
@@ -69,37 +79,47 @@ int main()
     s2.R = 0.5;
     s2.material_id = 2;
 
-// METAL
+    //floor
     Material m0;
-    m0.col[0] = 0.5;
-    m0.col[1] = 0.4;
-    m0.col[2] = 0.7;
-    m0.type = 1;
-    m0.metal.roughness = 0.02;
+    m0.col[0] = 1.0;
+    m0.col[1] = 0.0;
+    m0.col[2] = 0.0;
+    m0.type = LAMBERT; // 0 is lambert
 
-//floor
+
+// METAL
     Material m1;
-    m1.col[0] = 1.0;
-    m1.col[1] = 0.0;
-    m1.col[2] = 0.0;
-    m1.type = 0; // 0 is lambert
+    m1.col[0] = 0.5;
+    m1.col[1] = 0.4;
+    m1.col[2] = 0.7;
+    m1.type = METAL;
+    m1.metal.roughness = 0.02;
 
     Material m2;
     m2.col[0] = 0.2;
     m2.col[1] = 0.7;
     m2.col[2] = 0.5;
-    m2.type = 1;
+    m2.type = METAL;
     m2.metal.roughness = 0.01;
 
 
     Sphere spheres[3] = {s0,s1,s2};
     Material materials[3] = {m0,m1,m2};
-    std::vector<Sphere> vSpheres(2);
-    vSpheres[0] = s1;
-    vSpheres[1] = s0;
+    std::vector<Sphere> vSpheres;
+    vSpheres.reserve(10);
+    std::vector<Material> vMaterials;
+    vMaterials.reserve(10);
 
 
-    std::cout << "size of sphere " << sizeof(s0) << std::endl;
+    vSpheres.push_back(s0);
+    vSpheres.push_back(s1);
+    vSpheres.push_back(s2);
+
+    vMaterials.push_back(m0);
+    vMaterials.push_back(m1);
+    vMaterials.push_back(m2);
+
+
 
     // glfw: initialize and configure
     // ------------------------------
@@ -245,7 +265,7 @@ int main()
     GLuint ssbo_spheres;
     glGenBuffers(1, &ssbo_spheres);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_spheres);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof (spheres), &spheres, GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
+    glBufferData(GL_SHADER_STORAGE_BUFFER, vSpheres.size()*sizeof (Sphere), vSpheres.data(), GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     // binding it
     GLuint ssbo_binding_point_index_spheres = 1;
@@ -260,7 +280,7 @@ int main()
     GLuint ssbo_materials;
     glGenBuffers(1, &ssbo_materials);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_materials);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(materials), &materials, GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
+    glBufferData(GL_SHADER_STORAGE_BUFFER, vMaterials.size()*sizeof(Material), vMaterials.data(), GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     ///
     GLuint ssbo_binding_point_index_materials = 4;
@@ -286,46 +306,48 @@ int main()
     std::cout << "UBO Idx: " << uboIdx << std:: endl;
 
 
-    // Our state
-    bool show_demo_window = false;
-    bool show_another_window = true;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    float tmp_x, tmp_z;
 
 
-
+    bool showEditPanel = false;
+    int idEdit = 2;
+    bool delete_something = false;
+    int idxDelete = -1;
     while (!glfwWindowShouldClose(window)) {
         bool camera_moved = false;
 
 
         float timeValue = glfwGetTime();
         float xValue = 5*(sin(timeValue) / 2.0f) + 0.5f;
-        float zValue = 5*(sin(timeValue + PI/2.0) / 2.0f) + 0.5f;
+        float yValue = 1*(sin(timeValue + PI/2.0) / 2.0f) + 1.5f;
+        float zValue = 1*(sin(timeValue + PI/4.0) / 2.0f);
+//
+//        vSpheres[0].center_pos[0] = xValue;
+//        vSpheres[0].center_pos[1] = yValue;
+//        vSpheres[0].center_pos[2] = zValue;
+//        camera_moved = true;
 
-        spheres[0].center_pos[0] = xValue;
-        spheres[0].center_pos[2] = zValue;
-        camera_moved = true;
-//        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-//        GLvoid* p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-//        memcpy(p, &camera, sizeof(camera));
-//        glUnmapBuffer(GL_UNIFORM_BUFFER);
+
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(camera), &camera);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_spheres);
-        GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
-        memcpy(p, &spheres, sizeof(spheres));
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-//        glBindBuffer(GL_UNIFORM_BUFFER, ssbo_spheres);
-//        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(spheres), &spheres);
-//        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-//        glBindBuffer(GL_UNIFORM_BUFFER, ssbo_materials);
-//        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(materials), &materials);
-//        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glBindBuffer(GL_UNIFORM_BUFFER, ssbo_spheres);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, vSpheres.size()*sizeof(Sphere), vSpheres.data());
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_spheres);
+//        GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+//        memcpy(p, vSpheres.data(), vSpheres.size()*sizeof (Sphere));
+//        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+
+
+        glBindBuffer(GL_UNIFORM_BUFFER, ssbo_materials);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, vMaterials.size()*sizeof(Material), vMaterials.data());
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 
         nowTime = glfwGetTime();
@@ -336,43 +358,164 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
 
-//        ImGui::ShowUserGuide();
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-//        {
-//            static float f = 0.0f;
-//            static int counter = 0;
-//
-//            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-//            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-//            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-//            ImGui::Checkbox("Another Window", &show_another_window);
-//            ImGui::SliderFloat("X", &camera.directionView[0], -1.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-//            ImGui::SliderFloat("Z", &camera.directionView[1], -1.0f, 1.0f);
-//            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-//            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-//                counter++;
-//            ImGui::SameLine();
-//            ImGui::Text("counter = %d", counter);
-//            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-//            ImGui::End();
-//        }
-        // 3. Show another simple window.
-        if (show_another_window)
+
+        if (showEditPanel){
+
+            float* xPos = &vSpheres[idEdit].center_pos[0];
+            float* yPos = &vSpheres[idEdit].center_pos[1];
+            float* zPos = &vSpheres[idEdit].center_pos[2];
+            float* Radius = &vSpheres[idEdit].R;
+            float* col = vMaterials[idEdit].col;
+            char* items[] = {"Lambert", "Metal", "Glass", "Light"};
+            int* current_type = &vMaterials[idEdit].type;
+
+
         {
-            ImGui::Begin("Control info", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Use WASD to move");
-            ImGui::Text("Use Left mouse button to rotate camera");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
+            ImGui::Begin("Sphere Param Editor", &showEditPanel);
+            if (idEdit != 0){ // not allowing to move ground
+            if (ImGui::SliderFloat("Slider X", xPos,-5.0f,5.0f))
+            {
+                camera_moved = true;
+            }
+
+            if (ImGui::SliderFloat("Slider Y", yPos,-5.0f,5.0f))
+            {
+                camera_moved = true;
+            }
+
+            if (ImGui::SliderFloat("Slider Z", zPos,-5.0f,5.0f))
+            {
+                camera_moved = true;
+            }
+            if (ImGui::SliderFloat("Radius", Radius,0,5.0f) )
+            {
+                camera_moved = true;
+            }
+            }
+            if (ImGui::ColorEdit3("color", col))
+            {
+                camera_moved = true;
+            }
+
+            if (ImGui::Combo("Type", current_type, items, 4))
+            {
+                camera_moved = true;
+            }
+            if (*current_type == METAL)
+            {
+                if (ImGui::SliderFloat("Rougness", &vMaterials[idEdit].metal.roughness,0.0f,0.2f))
+                {
+                    camera_moved = true;
+                }
+            }
+            if (*current_type == GLASS)
+            {
+                if (ImGui::SliderFloat("Refractive Index", &vMaterials[idEdit].dielectric.ref_idx,1.0f,2.0f))
+                {
+                    camera_moved = true;
+                }
+
+
+            }
             ImGui::End();
+        }
+        }
+        ImGui::Begin("List");
+        if (ImGui::BeginTable("List of all spheres", 3))
+        {
+            for (int i = 0; i < vSpheres.size(); i++)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                ImGui::Text("Sphere %d", i);
+
+                ImGui::TableNextColumn();
+                std::string title = "Edit###" + std::to_string( i);
+
+                if (ImGui::Button(title.c_str()))
+                {
+                    idEdit = i;
+                    showEditPanel = true;
+                    std::cout << "edit something triggerred";
+                }
+
+                ImGui::TableNextColumn();
+                std::string d_title = "delete###" + std::to_string(vSpheres.size() +i);
+
+                if ( ImGui::Button(d_title.c_str()) )
+                {
+                    delete_something = true;
+                    idxDelete = i;
+
+                }
+
+
+            }
+            ImGui::EndTable();
+            if (ImGui::Button("Add New"))
+            {
+                Sphere s;
+                Material m;
+                s.center_pos[0] = -0.5;
+                s.center_pos[1] = 0.25;
+                s.center_pos[2] = 0.0;
+                s.R = 0.5;
+                s.material_id = vMaterials.size();
+                vSpheres.push_back(s);
+
+                m.col[0] = 1.0f; m.col[1] = 1.0f; m.col[2] = 1.0f;
+                m.type = LIGHT;
+                m.dielectric.ref_idx = 1.2f;
+                m.metal.roughness = 0.0f;
+                vMaterials.push_back(m);
+                std:: cout << "Material size : ";
+                std::cout << vMaterials.size() << std::endl;
+
+
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_spheres);
+                glBufferData(GL_SHADER_STORAGE_BUFFER, vSpheres.size()*sizeof (Sphere), vSpheres.data(), GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_materials);
+                glBufferData(GL_SHADER_STORAGE_BUFFER, vMaterials.size()*sizeof(Material), vMaterials.data(), GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+
+                camera_moved = true;
+                idEdit = vSpheres.size()-1;
+                showEditPanel = true;
+            }
+
+        }
+        ImGui::End();
+
+
+        if (delete_something)
+        {
+            vSpheres.erase(vSpheres.begin() + idxDelete);
+            vMaterials.erase(vMaterials.begin() + idxDelete);
+            // update vectors
+            for (int i = 0; i < vSpheres.size(); i++)
+            {
+                vSpheres[i].material_id = i;
+            }
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_spheres);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, vSpheres.size()*sizeof (Sphere), vSpheres.data(), GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_materials);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, vMaterials.size()*sizeof(Material), vMaterials.data(), GL_DYNAMIC_COPY); //sizeof(data) only works for statically sized C/C++ arrays.
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+            delete_something = false;
+            camera_moved = true;
         }
 
 
 
-        //while (deltaTime > 1) {
+        //ImGui::ShowDemoWindow();
+
             glfwPollEvents();
             if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_ESCAPE)) {
                 glfwSetWindowShouldClose(window, 1);
@@ -382,22 +525,16 @@ int main()
             deltaTime--;
 
 
-            //////////////
+
             { // launch compute shaders!
                 
                 CompShader.use();
-//                CompShader.setVec3(camera_pos[0], camera_pos[1], camera_pos[2], "camera_origin");
-
                 glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-
-//                CompShader.setVec3(direction_view[0] + camera_pos[0], direction_view[1]+ camera_pos[1],
-//                                   direction_view[2]+camera_pos[2], "direction_view");
 
                 if (camera_moved)
                 {
                     r_int = 0;
                 }
-                
                     r_int++;
                 //int r_int = camera_moved ?  rand()% 100 : 0;
 
@@ -429,11 +566,9 @@ int main()
 
         if (glfwGetTime() - timer > 1.0) {
             timer++;
+            std:: cout << "vSpheres size: " <<
+            vSpheres.size() << std::endl;
             std::cout << "FPS: " << frames << std::endl;
-            std::cout << "X pos: " <<MouseMovement::xPos << std::endl;
-            std::cout << "Last X pos: " <<MouseMovement::last_xPos << std::endl;
-
-            std:: cout << "is LKM pressed " << MouseMovement::is_LKM_pressed << std::endl;
             frames = 0;
 
         }

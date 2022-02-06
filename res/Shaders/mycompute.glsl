@@ -32,9 +32,10 @@ uint g_state = 0;
 #define METAL  1
 #define DIELECTRIC 2
 #define LIGHT 3
+
 #define LENS_RADIUS 0
 #define K_samples 10
-#define MAX_DEPTH 50
+#define MAX_DEPTH 30
 
 
 //-------------Help Functions---------------
