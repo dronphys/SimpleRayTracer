@@ -1,7 +1,7 @@
 # SimpleRayTracer
 
 
-![alt text](https://github.com/dopnphys/SimpleRayTracer/img/preview.jpg?raw=true)
+![](/img/preview.jpg)
 
 Simple Ray Tracer build using OpenGL
 
