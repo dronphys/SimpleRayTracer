@@ -4,6 +4,7 @@
 //-----------------------------------------
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img_output;
+uniform sampler2D env_texture;
 ///------------------------------------------
 //-------------UBO---------------
 //-----------------------------------------
@@ -420,7 +421,9 @@ vec3 calculate_color(in Ray r)
         else 
         {
             float t = 0.5 * (r.direction.y + 1.0);
-            vec3 sky_color =vec3(0.2);//(1.0 - t) * vec3(1.0) + t * vec3(0.5, 0.7, 1.0);
+            //vec3 sky_color =vec3(0.2);//(1.0 - t) * vec3(1.0) + t * vec3(0.5, 0.7, 1.0);
+
+            vec3 sky_color = texture(env_texture,0.3 + vec2(1+new_ray.direction.x/2.0,new_ray.direction.y )).rgb;
             color *= sky_color *0.9;
             break;
         }
@@ -440,82 +443,6 @@ vec3 calculate_color(in Ray r)
 void main()
 {
 
-// Sphere s0;
-// s0.center_pos = vec3(0.51,0.0,-10.0);
-// s0.R = 3;
-// s0.material_id = 4;
-
-
-// Sphere s1;
-// s1.center_pos = vec3(0.51,0.0,-1.0);
-// s1.R = 0.5;
-// s1.material_id = 0;
-
-// Sphere s2;
-// s2.center_pos = vec3(-0.51,0.0,-1.0);
-// s2.R = 0.5;
-// s2.material_id = 2;
-
-// Sphere s3;
-// s3.center_pos = vec3(0.0,-1000.5,-1.0);
-// s3.R = 1000;
-// s3.material_id = 3;
-
-// Sphere s4;
-// s4.center_pos = vec3(0.51,0.0, 0.0);
-// s4.R = 0.5;
-// s4.material_id = 1;
-
-// Sphere s5;
-// s5.center_pos = vec3(0.51,0.0, 0.0);
-// s5.R = -0.48;
-// s5.material_id = 1;
-
-
-// // Lambert
-// Material m0;
-// m0.col = vec3(0.3, 0.9, 0.0);
-// m0.type = LAMBERTIAN;
-
-
-// // glass
-// Material m1;
-// m1.col = vec3(1.0,0.0, 1.0);
-// m1.type = DIELECTRIC;
-// m1.dielectric.ref_idx = 1.5;
-
-// // METAL
-// Material m2;
-// m2.col = vec3(0.7, 0.7, 0.7);
-// m2.type = METAL;
-// m2.metal.roughness = 0;
-
-// //floor
-//  Material m3;
-//  m3.col = vec3(0.5451, 0.5882, 0.6196);
-//  m3.type = LAMBERTIAN;
-
-// // light
-// Material m4;
-// m4.col = vec3(1.0,1.0,1.0);
-// m4.type = LIGHT;
-
-
-// Scene scene;
-// scene.num_materials = 5;
-// scene.num_spheres = 6;
-// scene.spheres[0] = s0;
-// scene.spheres[1] = s1;
-// scene.spheres[2] = s2;
-// scene.spheres[3] = s3;
-// scene.spheres[4] = s4;
-// scene.spheres[5] = s5;
-
-// scene.materials[0] = m0;
-// scene.materials[1] = m1;
-// scene.materials[2] = m2;
-// scene.materials[3] = m3;
-// scene.materials[4] = m4;
 
 Scene scene;
 
@@ -539,7 +466,8 @@ pixel_color /= K_samples;
 
 vec3 prev_color = pow(imageLoad(img_output, pixel_coords).rgb,vec3(2));
 vec3 final = mix(pixel_color, prev_color, u_Accum);
-//vec3 final = pixel_color;
-imageStore(img_output, pixel_coords, sqrt(vec4(final,1.0)) );
+
+
+imageStore(img_output, pixel_coords, sqrt(vec4(final,1.0)));
 
 }

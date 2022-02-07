@@ -194,6 +194,8 @@ int main()
     Shader GraphShader("../res/Shaders/basic.shader");
 
 
+
+
      //--------------
      //----- Creating empty texture we are going to write into?
      //dimensions of the image
@@ -212,8 +214,30 @@ int main()
 
     //--------------------
 
-    int work_grp_cnt[3];
+    int width_env, height_env, nrChannels_env;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char* env= stbi_load("../img/envmap.jpg", &width_env, &height_env, &nrChannels_env, 0);
 
+    if (!env)
+    {
+        std::cout << "FAILED TO LOAD envoriment";
+        return -1;
+    }
+
+    GLuint env_texture;
+    glGenTextures(1, &env_texture);
+    glBindTexture(GL_TEXTURE_2D, env_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_env, height_env, 0, GL_RGB, GL_UNSIGNED_BYTE, env);
+    stbi_image_free(env);
+
+
+
+
+    int work_grp_cnt[3];
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
@@ -312,14 +336,20 @@ int main()
     int idEdit = 2;
     bool delete_something = false;
     int idxDelete = -1;
+
+    GraphShader.use();
+    glUniform1i(glGetUniformLocation(GraphShader.getID(), "tex_output"),0);
+    CompShader.use();
+    glUniform1i(glGetUniformLocation(CompShader.getID(), "env_texture"),1);
+
+
     while (!glfwWindowShouldClose(window)) {
         bool camera_moved = false;
 
 
         float timeValue = glfwGetTime();
         float xValue = 5*(sin(timeValue) / 2.0f) + 0.5f;
-        float yValue = 1*(sin(timeValue + PI/2.0) / 2.0f) + 1.5f;
-        float zValue = 1*(sin(timeValue + PI/4.0) / 2.0f);
+
 //
 //        vSpheres[0].center_pos[0] = xValue;
 //        vSpheres[0].center_pos[1] = yValue;
@@ -327,23 +357,16 @@ int main()
 //        camera_moved = true;
 
 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, env_texture);
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(camera), &camera);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-
-
         glBindBuffer(GL_UNIFORM_BUFFER, ssbo_spheres);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, vSpheres.size()*sizeof(Sphere), vSpheres.data());
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_spheres);
-//        GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
-//        memcpy(p, vSpheres.data(), vSpheres.size()*sizeof (Sphere));
-//        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-
 
         glBindBuffer(GL_UNIFORM_BUFFER, ssbo_materials);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, vMaterials.size()*sizeof(Material), vMaterials.data());
@@ -421,6 +444,7 @@ int main()
             ImGui::End();
         }
         }
+
         ImGui::Begin("List");
         if (ImGui::BeginTable("List of all spheres", 3))
         {
@@ -527,16 +551,19 @@ int main()
 
 
             { // launch compute shaders!
-                
+
+
                 CompShader.use();
                 glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+
+
 
                 if (camera_moved)
                 {
                     r_int = 0;
                 }
                     r_int++;
-                //int r_int = camera_moved ?  rand()% 100 : 0;
+
 
                 CompShader.setInt(r_int,"state");
                 CompShader.setFloat(float(r_int) / float(r_int + 1),"u_Accum");
@@ -550,8 +577,10 @@ int main()
 
             glBindVertexArray(VAO);
             GraphShader.use();
+
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, tex_output);
+
 
             
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
