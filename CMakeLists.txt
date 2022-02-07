@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-set(PROJECT_NAME ComputeShaders)
+set(PROJECT_NAME SimpleRayTracer)
 project(${PROJECT_NAME})
 
 add_executable(${PROJECT_NAME} src/main.cpp src/shader.h src/renderer.h
